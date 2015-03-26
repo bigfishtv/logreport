@@ -53,7 +53,7 @@ foreach ($files as $file) {
     	fclose($handle);
     	// push contents of file to output, showing '...'
     	// if it looks like we didn't get all the text
-    	echo $path . PHP_EOL .
+    	echo decoratedPath($path) . PHP_EOL .
     		$contents . (strlen($contents) < ($wantBytes) ? '...' : '') .
     		PHP_EOL . PHP_EOL;
     }
@@ -62,3 +62,8 @@ foreach ($files as $file) {
 
 // write cache
 file_put_contents($config['cacheFile'], serialize($freshCache));
+
+function decoratedPath($path) {
+    $line = str_repeat('-', strlen($path)) . PHP_EOL;
+    return $line . $path . PHP_EOL . $line;
+}
