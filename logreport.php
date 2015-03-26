@@ -40,7 +40,7 @@ foreach ($files as $file) {
 	$bytes = filesize($path);
 	$cachedBytes = isset($cache[$path]) ? $cache[$path] : 0;
     // check if bytes have changed
-    if ($cachedBytes != $bytes) {
+    if ($cachedBytes != $bytes && $bytes > 0) {
     	// if file is smaller than what it was, then we want the entire file
     	if ($bytes < $cachedBytes) {
     		$cachedBytes = 0;
