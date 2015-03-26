@@ -1,12 +1,15 @@
 <?php
 
+chdir(__DIR__);
+
 $configFile = 'config.php';
 
-if (file_exists($configFile)) {
-	$config = require('config.php');
-} else {
-	$config = array();
+// create config file on first run
+if (!file_exists($configFile)) {
+    copy($config . '.default', $configFile);
 }
+
+$config = require($configFile);
 
 $defaults = array(
 	'dir' => './',
