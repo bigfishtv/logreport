@@ -33,7 +33,7 @@ $files = new RegexIterator($flattened, $config['match']);
 
 // iterate through files
 foreach ($files as $file) {
-	$path = $file->getPathname();
+	$path = $file->getRealPath();
 	$bytes = filesize($path);
 	$cachedBytes = isset($cache[$path]) ? $cache[$path] : 0;
     // check if bytes have changed
@@ -50,7 +50,7 @@ foreach ($files as $file) {
     	fclose($handle);
     	// push contents of file to output, showing '...'
     	// if it looks like we didn't get all the text
-    	echo $file->getRealPath() . PHP_EOL .
+    	echo $path . PHP_EOL .
     		$contents . (strlen($contents) < ($wantBytes) ? '...' : '') .
     		PHP_EOL . PHP_EOL;
     }
