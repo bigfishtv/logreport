@@ -6,7 +6,7 @@ $configFile = 'config.php';
 
 // create config file on first run
 if (!file_exists($configFile)) {
-    copy($config . '.default', $configFile);
+    copy($configFile . '.default', $configFile);
 }
 
 $config = require($configFile);
