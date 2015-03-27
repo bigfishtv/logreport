@@ -37,6 +37,8 @@ $directory = new RecursiveDirectoryIterator($config['dir']);
 $flattened = new RecursiveIteratorIterator($directory);
 $files = new RegexIterator($flattened, $config['match']);
 
+$fileChangedCount = 0;
+
 // iterate through files
 foreach ($files as $file) {
 	$path = $file->getRealPath();
@@ -59,6 +61,7 @@ foreach ($files as $file) {
     	echo decoratedPath($path) . PHP_EOL .
     		$contents . (strlen($contents) < ($wantBytes) ? '...' : '') .
     		PHP_EOL . PHP_EOL;
+        $fileChangedCount++;
     }
     $freshCache[$path] = $bytes;
 }
@@ -66,10 +69,11 @@ foreach ($files as $file) {
 // write cache
 file_put_contents($config['cacheFile'], serialize($freshCache));
 
-// script end time
-$time += microtime(true);
-
-echo decoratedPath('Execution duration: ' . sprintf('%f', $time));
+// script end time only if log files changed
+if ($fileChangedCount) {
+    $time += microtime(true);
+    echo decoratedPath('Execution duration: ' . sprintf('%f', $time));
+}
 
 function decoratedPath($path) {
     $line = str_repeat('-', strlen($path)) . PHP_EOL;
