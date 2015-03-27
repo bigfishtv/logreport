@@ -29,6 +29,9 @@ if (file_exists($config['cacheFile'])) {
 // start a fresh cache
 $freshCache = array();
 
+// script start time
+$time = -microtime(true);
+
 // find files
 $directory = new RecursiveDirectoryIterator($config['dir']);
 $flattened = new RecursiveIteratorIterator($directory);
@@ -62,6 +65,11 @@ foreach ($files as $file) {
 
 // write cache
 file_put_contents($config['cacheFile'], serialize($freshCache));
+
+// script end time
+$time += microtime(true);
+
+echo decoratedPath('Execution duration: ' . sprintf('%f', $time));
 
 function decoratedPath($path) {
     $line = str_repeat('-', strlen($path)) . PHP_EOL;
