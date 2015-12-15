@@ -34,7 +34,7 @@ $time = -microtime(true);
 
 // find files
 $directory = new RecursiveDirectoryIterator($config['dir']);
-$flattened = new RecursiveIteratorIterator($directory);
+$flattened = new RecursiveIteratorIterator(new IgnoreFilterIterator($directory));
 $files = new RegexIterator($flattened, $config['match']);
 
 $fileChangedCount = 0;
@@ -78,4 +78,23 @@ if ($fileChangedCount) {
 function decoratedPath($path) {
     $line = str_repeat('-', strlen($path)) . PHP_EOL;
     return $line . $path . PHP_EOL . $line;
+}
+
+class IgnoreFilterIterator extends RecursiveFilterIterator {
+    
+    public static $FILTERS = array(
+        '.svn',
+        '.git',
+        'node_modules',
+        'vendor',
+    );
+
+    public function accept() {
+        return !in_array(
+            $this->current()->getFilename(),
+            self::$FILTERS,
+            true
+        );
+    }
+
 }
