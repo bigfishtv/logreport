@@ -12,18 +12,19 @@ if (!file_exists($configFile)) {
 $config = require($configFile);
 
 $defaults = array(
-	'dir' => './',
-	'match' => '/(error_log)|(\.log)$/i',
-	'cacheFile' => './logreport.cache',
+    'dir' => './',
+    'match' => '/(error_log)|(\.log)$/i',
+    'exclude' => [],
+    'cacheFile' => './logreport.cache',
 );
 
 $config += $defaults;
 
 // read cache
 if (file_exists($config['cacheFile'])) {
-	$cache = unserialize(file_get_contents($config['cacheFile']));
+    $cache = unserialize(file_get_contents($config['cacheFile']));
 } else {
-	$cache = array();
+    $cache = array();
 }
 
 // start a fresh cache
@@ -36,31 +37,34 @@ $time = -microtime(true);
 $directory = new RecursiveDirectoryIterator($config['dir']);
 $flattened = new RecursiveIteratorIterator(new IgnoreFilterIterator($directory));
 $files = new RegexIterator($flattened, $config['match']);
+if (!empty($config['exclude'])) {
+    $files = new ExcludePathsIterator($files, $config['exclude']);
+}
 
 $fileChangedCount = 0;
 
 // iterate through files
 foreach ($files as $file) {
-	$path = $file->getRealPath();
-	$bytes = filesize($path);
-	$cachedBytes = isset($cache[$path]) ? $cache[$path] : 0;
+    $path = $file->getRealPath();
+    $bytes = filesize($path);
+    $cachedBytes = isset($cache[$path]) ? $cache[$path] : 0;
     // check if bytes have changed
     if ($cachedBytes != $bytes && $bytes > 0) {
-    	// if file is smaller than what it was, then we want the entire file
-    	if ($bytes < $cachedBytes) {
-    		$cachedBytes = 0;
-    	}
-    	// open file and get contents
-    	$handle = fopen($path, 'r');
-    	fseek($handle, $cachedBytes);
-    	$wantBytes = $bytes - $cachedBytes;
-    	$contents = fread($handle, $wantBytes);
-    	fclose($handle);
-    	// push contents of file to output, showing '...'
-    	// if it looks like we didn't get all the text
-    	echo decoratedPath($path) . PHP_EOL .
-    		$contents . (strlen($contents) < ($wantBytes) ? '...' : '') .
-    		PHP_EOL . PHP_EOL;
+        // if file is smaller than what it was, then we want the entire file
+        if ($bytes < $cachedBytes) {
+            $cachedBytes = 0;
+        }
+        // open file and get contents
+        $handle = fopen($path, 'r');
+        fseek($handle, $cachedBytes);
+        $wantBytes = $bytes - $cachedBytes;
+        $contents = fread($handle, $wantBytes);
+        fclose($handle);
+        // push contents of file to output, showing '...'
+        // if it looks like we didn't get all the text
+        echo decoratedPath($path) . PHP_EOL .
+            $contents . (strlen($contents) < ($wantBytes) ? '...' : '') .
+            PHP_EOL . PHP_EOL;
         $fileChangedCount++;
     }
     $freshCache[$path] = $bytes;
@@ -75,13 +79,15 @@ if ($fileChangedCount) {
     echo decoratedPath('Execution duration: ' . sprintf('%f', $time));
 }
 
-function decoratedPath($path) {
+function decoratedPath($path)
+{
     $line = str_repeat('-', strlen($path)) . PHP_EOL;
     return $line . $path . PHP_EOL . $line;
 }
 
-class IgnoreFilterIterator extends RecursiveFilterIterator {
-    
+class IgnoreFilterIterator extends RecursiveFilterIterator
+{
+
     public static $FILTERS = array(
         '.svn',
         '.git',
@@ -89,12 +95,35 @@ class IgnoreFilterIterator extends RecursiveFilterIterator {
         'vendor',
     );
 
-    public function accept() {
+    public function accept()
+    {
         return !in_array(
             $this->current()->getFilename(),
             self::$FILTERS,
             true
         );
     }
+}
 
+class ExcludePathsIterator extends FilterIterator
+{
+    protected $patterns = [];
+
+    public function __construct(Iterator $iterator, array $patterns = [])
+    {
+        $this->patterns = $patterns;
+
+        parent::__construct($iterator);
+    }
+
+    public function accept()
+    {
+        $path = $this->current()->getRealPath();
+        foreach ($this->patterns as $pattern) {
+            if (preg_match($pattern, $path)) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
